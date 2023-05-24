@@ -112,7 +112,7 @@ app.get('/clevertanken', (req, res) => {
     for (let i = 0; i < valuesS.length; i += 6) {
         try {
             const id = valuesS[i].split('/tankstelle_details/')[1].split('"')[0];
-            const price = valuesD[i + 1].includes('<sup>') ? valuesD[i + 1].replace('<sup>', '').replace('</sup>', '').trim() : '-.---';
+            const price = valuesS[i + 1].includes('<sup>') ? valuesS[i + 1].replace('<sup>', '').replace('</sup>', '').trim() : '-.---';
             const change = valuesS[i + 2].split('>')[1].trim();
             const name = valuesS[i + 3].split('>')[1].split('<')[0].trim();
             const street = valuesS[i + 4].split('>')[1].split('<')[0].trim();
@@ -154,7 +154,7 @@ app.get('/clevertanken', (req, res) => {
     for (let i = 0; i < valuesSP.length; i += 6) {
         try {
             const id = valuesSP[i].split('/tankstelle_details/')[1].split('"')[0];
-            const price = valuesD[i + 1].includes('<sup>') ? valuesD[i + 1].replace('<sup>', '').replace('</sup>', '').trim() : '-.---';
+            const price = valuesSP[i + 1].includes('<sup>') ? valuesSP[i + 1].replace('<sup>', '').replace('</sup>', '').trim() : '-.---';
             const change = valuesSP[i + 2].split('>')[1].trim();
             const name = valuesSP[i + 3].split('>')[1].split('<')[0].trim();
             const street = valuesSP[i + 4].split('>')[1].split('<')[0].trim();
