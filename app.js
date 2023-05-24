@@ -69,9 +69,6 @@ app.get('/adac', (req, res) => {
 //7 Super E5
 //6 SuperPlus
 app.get('/clevertanken', (req, res) => {
-    res.sendFile(__dirname + '/dummyData.json');
-    return;
-
     const dataD = fetch(`https://www.clever-tanken.de/tankstelle_liste?lat=${req.query.lat}&lon=${req.query.lon}&ort=&spritsorte=3&r=10&sort=p`).text().split('\n').map(e => e.trim()).filter(e => e != '');
 
     const valuesD = dataD.filter(e => ((e.includes('<sup>') && !e.includes('city-price-average-text')) || (e.includes('price-changed') && !e.includes('<br>')) || (e.includes('fuel-station-location') && (e.includes('name') || e.includes('street') || e.includes('city')) && !e.includes('icon')) || e.includes('/tankstelle_details')))
@@ -230,4 +227,4 @@ app.get("/", (req, res) => {
     res.sendFile(__dirname + '/index.html');
 });
   
-app.listen(process.env.PORT ?? 3000);
+app.listen(3002, () => { console.log('App started on port 3002') });
