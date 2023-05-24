@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spritpreis-Vergleich</title>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
+    
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="d-flex flex-column align-items-center p-3">
+    <h1>Preisvergleich</h1>
+    <p>für Tankstellen in deiner Umgebung (oder in und um Henstedt-Ulzburg)</p>
+    <p>Reminder: Tanke Super Plus nur, wenn es 98+ Oktan sind, alles andere ist Scam!</p>
+
+    <table class="table table-dark table-striped" id="tb">
+        <thead>
+            <tr>
+                <th onclick="sortTable('tb', 0)">Tankstelle</th>
+                <th onclick="sortTable('tb', 1)">Anschrift</th>
+                <th onclick="sortTable('tb', 2)">Diesel</th>
+                <th onclick="sortTable('tb', 3)">Super</th>
+                <th onclick="sortTable('tb', 4)">Super Plus</th>
+            </tr>
+        </thead>
+        <tbody id="table">
+            <tr>
+                <td colspan="5" class="text-center">Loading...</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <script>
+        const backup_lat = 53.7636537;
+        const backup_lon = 9.9867244;
+
+        window.addEventListener('load', () => {
+            // if ("geolocation" in navigator) {
+            //     navigator.geolocation.getCurrentPosition((position) => {
+            //         const lat = position.coords.latitude;
+            //         const lon = position.coords.longitude;
+
+            //         run(lat, lon);
+            //     }, (error) => {
+            //         run(backup_lat, backup_lon);
+            //     });
+            // } else {
+            //     console.error("Geolocation is not supported by this browser.");
+            // }
+
+            run(backup_lat, backup_lon);
+        })
+        
+        function run(lat, lon) {
+            const table = document.getElementById('table');
+            fetch(`/clevertanken?lat=${lat}&lon=${lon}`)
+            .then(res => res.json())
+            .then(res => {
+                table.innerHTML = '';
+
+                res.forEach(e => {
+                    const diesel = e.prices.find(p => p.type == 'Diesel');
+                    const superB = e.prices.find(p => p.type == 'Super');
+                    const superP = e.prices.find(p => p.type == 'Super Plus');
+                    
+                    table.innerHTML += `<tr><td>${e.tankstelle.name}</td><td>${e.tankstelle.street}<br>${e.tankstelle.postal} ${e.tankstelle.city}</td><td>${diesel ? diesel.price : '-.---'}€</td><td>${superB ? superB.price : '-.---'}€</td><td>${superP ? superP.price : '-.---'}€</td></tr>`;
+                });
+            })
+        }
+
+        function sortTable(tableId, column) {
+            const table = document.getElementById(tableId);
+
+            if (!table) {
+                return;
+            }
+
+            if (!table.getAttribute('data-sort-column')) {
+                table.setAttribute('data-sort-column', '-1')
+            }
+
+            const lastSortCol = table.getAttribute('data-sort-column');
+            table.setAttribute('data-sort-column', column);
+
+            let asc = (column == lastSortCol);
+            let switching = true;
+            let i = 1;
+            let hasSwitched = false;
+            while (switching) {
+                const rows = table.rows;
+                switching = false;
+
+                for (i = 1; i < (rows.length - 1); i++) {
+                    var shouldSwitch = false;
+                    const x = rows[i].getElementsByTagName('td')[column];
+                    const y = rows[i + 1].getElementsByTagName('td')[column];
+
+                    if (asc) {
+                        if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+                            shouldSwitch = true;
+                            break;
+                        }   
+                    } else {
+                        if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    }
+                }
+                if (shouldSwitch) {
+                    rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                    switching = true;
+                    hasSwitched = true;
+                } else {
+                    if (!hasSwitched && asc) {
+                        asc = !asc;
+                        switching = true;
+                    }
+                }
+            }
+        }
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
