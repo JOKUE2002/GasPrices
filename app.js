@@ -1,5 +1,6 @@
 const fetch = require('sync-fetch')
 const express = require("express");
+const { writeFileSync } = require('fs');
 const app = express();
 
 app.use(express.static(__dirname + "/public/"));
@@ -71,53 +72,18 @@ app.get('/adac', (req, res) => {
 app.get('/clevertanken', (req, res) => {
     const dataD = fetch(`https://www.clever-tanken.de/tankstelle_liste?lat=${req.query.lat}&lon=${req.query.lon}&ort=&spritsorte=3&r=10&sort=p`).text().split('\n').map(e => e.trim()).filter(e => e != '');
 
-    const valuesD = dataD.filter(e => ((e.includes('<sup>') && !e.includes('city-price-average-text')) || (e.includes('price-changed') && !e.includes('<br>')) || (e.includes('fuel-station-location') && (e.includes('name') || e.includes('street') || e.includes('city')) && !e.includes('icon')) || e.includes('/tankstelle_details')))
+    const valuesD = dataD.filter(e => ((e.includes('<sup>') && !e.includes('city-price-average-text')) || e.includes('no-price-text') || (e.includes('price-changed') && !e.includes('<br>')) || (e.includes('fuel-station-location') && (e.includes('name') || e.includes('street') || e.includes('city')) && !e.includes('icon')) || e.includes('/tankstelle_details')))
 
     const tmp = [];
     for (let i = 0; i < valuesD.length; i += 6) {
-        const id = valuesD[i].split('/tankstelle_details/')[1].split('"')[0];
-        const price = valuesD[i + 1].replace('<sup>', '').replace('</sup>', '').trim();
-        const change = valuesD[i + 2].split('>')[1].trim();
-        const name = valuesD[i + 3].split('>')[1].split('<')[0].trim();
-        const street = valuesD[i + 4].split('>')[1].split('<')[0].trim();
-        const city = valuesD[i + 5].split('>')[1].split('<')[0].trim();
+        try {
+            const id = valuesD[i].split('/tankstelle_details/')[1].split('"')[0];
+            const price = valuesD[i + 1].includes('<sup>') ? valuesD[i + 1].replace('<sup>', '').replace('</sup>', '').trim() : '-.---';
+            const change = valuesD[i + 2].split('>')[1].trim();
+            const name = valuesD[i + 3].split('>')[1].split('<')[0].trim();
+            const street = valuesD[i + 4].split('>')[1].split('<')[0].trim();
+            const city = valuesD[i + 5].split('>')[1].split('<')[0].trim();
 
-        tmp.push({
-            tankstelle: {
-                id: id,
-                name: name,
-                street: street,
-                postal: '',
-                city: city
-            }, prices: [
-                {
-                    type: 'Diesel',
-                    price: price
-                }
-            ],
-            lastChange: change
-        });
-    }
-
-    const dataS = fetch(`https://www.clever-tanken.de/tankstelle_liste?lat=${req.query.lat}&lon=${req.query.lon}&ort=&spritsorte=7&r=10&sort=p`).text().split('\n').map(e => e.trim()).filter(e => e != '');
-
-    const valuesS = dataS.filter(e => ((e.includes('<sup>') && !e.includes('city-price-average-text')) || (e.includes('price-changed') && !e.includes('<br>')) || (e.includes('fuel-station-location') && (e.includes('name') || e.includes('street') || e.includes('city')) && !e.includes('icon')) || e.includes('/tankstelle_details')))
-
-    for (let i = 0; i < valuesS.length; i += 6) {
-        const id = valuesS[i].split('/tankstelle_details/')[1].split('"')[0];
-        const price = valuesS[i + 1].replace('<sup>', '').replace('</sup>', '').trim();
-        const change = valuesS[i + 2].split('>')[1].trim();
-        const name = valuesS[i + 3].split('>')[1].split('<')[0].trim();
-        const street = valuesS[i + 4].split('>')[1].split('<')[0].trim();
-        const city = valuesS[i + 5].split('>')[1].split('<')[0].trim();
-
-        const idx = tmp.findIndex(e => e.tankstelle.id == id);
-        if (idx > -1) {
-            tmp[idx].prices.push({
-                type: 'Super',
-                price: price
-            });
-        } else {
             tmp.push({
                 tankstelle: {
                     id: id,
@@ -127,49 +93,99 @@ app.get('/clevertanken', (req, res) => {
                     city: city
                 }, prices: [
                     {
-                        type: 'Super',
+                        type: 'Diesel',
                         price: price
                     }
                 ],
                 lastChange: change
             });
+        } catch (e) {
+            console.log('Diesel', e);
+            console.log(valuesD[i]);
+        }
+    }
+
+    const dataS = fetch(`https://www.clever-tanken.de/tankstelle_liste?lat=${req.query.lat}&lon=${req.query.lon}&ort=&spritsorte=7&r=10&sort=p`).text().split('\n').map(e => e.trim()).filter(e => e != '');
+
+    const valuesS = dataS.filter(e => ((e.includes('<sup>') && !e.includes('city-price-average-text')) || e.includes('no-price-text') || (e.includes('price-changed') && !e.includes('<br>')) || (e.includes('fuel-station-location') && (e.includes('name') || e.includes('street') || e.includes('city')) && !e.includes('icon')) || e.includes('/tankstelle_details')))
+
+    for (let i = 0; i < valuesS.length; i += 6) {
+        try {
+            const id = valuesS[i].split('/tankstelle_details/')[1].split('"')[0];
+            const price = valuesD[i + 1].includes('<sup>') ? valuesD[i + 1].replace('<sup>', '').replace('</sup>', '').trim() : '-.---';
+            const change = valuesS[i + 2].split('>')[1].trim();
+            const name = valuesS[i + 3].split('>')[1].split('<')[0].trim();
+            const street = valuesS[i + 4].split('>')[1].split('<')[0].trim();
+            const city = valuesS[i + 5].split('>')[1].split('<')[0].trim();
+
+            const idx = tmp.findIndex(e => e.tankstelle.id == id);
+            if (idx > -1) {
+                tmp[idx].prices.push({
+                    type: 'Super',
+                    price: price
+                });
+            } else {
+                tmp.push({
+                    tankstelle: {
+                        id: id,
+                        name: name,
+                        street: street,
+                        postal: '',
+                        city: city
+                    }, prices: [
+                        {
+                            type: 'Super',
+                            price: price
+                        }
+                    ],
+                    lastChange: change
+                });
+            }
+        } catch (e) {
+            console.log('Super', e);
+            console.log(valuesS[i]);
         }
     }
 
     const dataSP = fetch(`https://www.clever-tanken.de/tankstelle_liste?lat=${req.query.lat}&lon=${req.query.lon}&ort=&spritsorte=6&r=10&sort=p`).text().split('\n').map(e => e.trim()).filter(e => e != '');
 
-    const valuesSP = dataSP.filter(e => ((e.includes('<sup>') && !e.includes('city-price-average-text')) || (e.includes('price-changed') && !e.includes('<br>')) || (e.includes('fuel-station-location') && (e.includes('name') || e.includes('street') || e.includes('city')) && !e.includes('icon')) || e.includes('/tankstelle_details')))
+    const valuesSP = dataSP.filter(e => ((e.includes('<sup>') && !e.includes('city-price-average-text')) || e.includes('no-price-text') || (e.includes('price-changed') && !e.includes('<br>')) || (e.includes('fuel-station-location') && (e.includes('name') || e.includes('street') || e.includes('city')) && !e.includes('icon')) || e.includes('/tankstelle_details')))
 
     for (let i = 0; i < valuesSP.length; i += 6) {
-        const id = valuesSP[i].split('/tankstelle_details/')[1].split('"')[0];
-        const price = valuesSP[i + 1].replace('<sup>', '').replace('</sup>', '').trim();
-        const change = valuesSP[i + 2].split('>')[1].trim();
-        const name = valuesSP[i + 3].split('>')[1].split('<')[0].trim();
-        const street = valuesSP[i + 4].split('>')[1].split('<')[0].trim();
-        const city = valuesSP[i + 5].split('>')[1].split('<')[0].trim();
+        try {
+            const id = valuesSP[i].split('/tankstelle_details/')[1].split('"')[0];
+            const price = valuesD[i + 1].includes('<sup>') ? valuesD[i + 1].replace('<sup>', '').replace('</sup>', '').trim() : '-.---';
+            const change = valuesSP[i + 2].split('>')[1].trim();
+            const name = valuesSP[i + 3].split('>')[1].split('<')[0].trim();
+            const street = valuesSP[i + 4].split('>')[1].split('<')[0].trim();
+            const city = valuesSP[i + 5].split('>')[1].split('<')[0].trim();
 
-        const idx = tmp.findIndex(e => e.tankstelle.id == id);
-        if (idx > -1) {
-            tmp[idx].prices.push({
-                type: 'Super Plus',
-                price: price
-            });
-        } else {
-            tmp.push({
-                tankstelle: {
-                    id: id,
-                    name: name,
-                    street: street,
-                    postal: '',
-                    city: city
-                }, prices: [
-                    {
-                        type: 'Super Plus',
-                        price: price
-                    }
-                ],
-                lastChange: change
-            });
+            const idx = tmp.findIndex(e => e.tankstelle.id == id);
+            if (idx > -1) {
+                tmp[idx].prices.push({
+                    type: 'Super Plus',
+                    price: price
+                });
+            } else {
+                tmp.push({
+                    tankstelle: {
+                        id: id,
+                        name: name,
+                        street: street,
+                        postal: '',
+                        city: city
+                    }, prices: [
+                        {
+                            type: 'Super Plus',
+                            price: price
+                        }
+                    ],
+                    lastChange: change
+                });
+            }
+        } catch (e) {
+            console.log('Super Plus', e);
+            console.log(valuesSP[i]);
         }
     }
 

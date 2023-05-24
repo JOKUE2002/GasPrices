@@ -14,6 +14,7 @@
     <h1>Preisvergleich</h1>
     <p>für Tankstellen in deiner Umgebung (oder in und um Henstedt-Ulzburg)</p>
     <p>Reminder: Tanke Super Plus nur, wenn es 98+ Oktan sind, alles andere ist Scam!</p>
+    <p>Hinweis: In Städten mit vielen Tankstellen (Hamburg) lädt die Seite lange...</p>
 
     <table class="table table-dark table-striped" id="tb">
         <thead>
@@ -98,12 +99,12 @@
                     const y = rows[i + 1].getElementsByTagName('td')[column];
 
                     if (asc) {
-                        if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+                        if (x.innerHTML.toLowerCase().replace('-', '9') > y.innerHTML.toLowerCase().replace('-', '9')) {
                             shouldSwitch = true;
                             break;
                         }   
                     } else {
-                        if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
+                        if (x.innerHTML.toLowerCase().replace('-', '9') < y.innerHTML.toLowerCase().replace('-', '9')) {
                             shouldSwitch = true;
                             break;
                         }
