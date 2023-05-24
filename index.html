@@ -37,20 +37,20 @@
         const backup_lon = 9.9867244;
 
         window.addEventListener('load', () => {
-            // if ("geolocation" in navigator) {
-            //     navigator.geolocation.getCurrentPosition((position) => {
-            //         const lat = position.coords.latitude;
-            //         const lon = position.coords.longitude;
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition((position) => {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
 
-            //         run(lat, lon);
-            //     }, (error) => {
-            //         run(backup_lat, backup_lon);
-            //     });
-            // } else {
-            //     console.error("Geolocation is not supported by this browser.");
-            // }
+                    run(lat, lon);
+                }, (error) => {
+                    run(backup_lat, backup_lon);
+                });
+            } else {
+                console.error("Geolocation is not supported by this browser.");
+            }
 
-            run(backup_lat, backup_lon);
+            //run(backup_lat, backup_lon);
         })
         
         function run(lat, lon) {
